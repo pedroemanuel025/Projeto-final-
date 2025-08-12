@@ -1,5 +1,3 @@
-#python
-#Copy
 from abc import ABC, abstractmethod
 import uuid
 from datetime import date
@@ -19,17 +17,17 @@ class Logavel(ABC):
 class IdentificavelMixin:
     """Gera um ID único; combine‑o com outras classes."""
     def __init__(self):
-        # TODO: gerar e armazenar um ID usando uuid.uuid4()
-        pass
+        self._id=uuid.uuid4()
+
     def get_id(self):
-        # TODO: retornar o ID
-        pass
+        return self._id   
+        
 
 class AuditavelMixin:
     """Fornece logs simples ao console."""
     def log_evento(self, evento: str):
-        # TODO: imprimir no formato  [LOG] <evento>
-        pass
+        print(f"[LOG] <{evento}>")    # Completo: imprimir no formato  [LOG] <evento>
+        
 
 # -------------------------------------------------
 # 3) Classe base Pessoa                           🡇
@@ -37,15 +35,16 @@ class AuditavelMixin:
 class Pessoa:
     """Classe base para pessoas do sistema."""
     def __init__(self, nome: str, cpf: str):
-        # TODO: armazenar nome e cpf como atributos protegidos
-        pass
+        self._nome=nome
+        self._cpf=cpf    # Completo: armazenar nome e cpf como atributos protegidos
+        
     @property
     def nome(self):
-        # TODO: retornar o nome
-        pass
+        return self._nome    # Completo: retornar o nome
+        
     def __str__(self):
-        # TODO: "Maria (123.456.789-00)"
-        pass
+        return f"{self._nome} ({self._cpf})"  # Completo: "Maria (123.456.789-00)"
+        
 
 # -------------------------------------------------
 # 4) Ingresso — classe simples                    🡇
@@ -64,24 +63,38 @@ class Ingresso:
 class Cliente(Pessoa):
     """Herda de Pessoa e possui ingressos."""
     def __init__(self, nome: str, cpf: str, email: str):
-        # TODO: chamar super().__init__ e criar lista vazia de ingressos
-        pass
+        super().__init__(nome,cpf)  
+        self._email=email
+        self._ingressos_compr=[]  # Completo: chamar super().__init__ e criar lista vazia de ingressos
+        
     def comprar_ingresso(self, ingresso: Ingresso):
-        # TODO: adicionar ingresso à lista
-        pass
+        if isinstance(ingresso,Ingresso) !=True:
+            raise ValueError("O ingresso adicionado nao e um objeto Ingressso")
+        self._ingressos_compr.append(ingresso)    # Completo: adicionar ingresso à lista
+        
     def listar_ingressos(self):
-        # TODO: imprimir os ingressos
-        pass
+        for ingressos in self._ingressos_compr:
+            print (ingressos)   # Completo: imprimir os ingressos
+        
 
 # -------------------------------------------------
 # 6) Funcionario (herança múltipla + mixins)      🡇
 # -------------------------------------------------
-# TODO: Implementar a classe Funcionario
-# - Herda de Pessoa, IdentificavelMixin e Logavel (pode usar AuditavelMixin)
-# - Atributos: cargo, registro
-# - Métodos:
-#   • exibir_dados()    → imprime nome, cargo, registro e ID
-#   • logar_entrada()   → registra no log
+class Funcionario(Pessoa,IdentificavelMixin,Logavel):
+    def __init__(self, nome:str, cpf:str, cargo:str, registro:str):
+        Pessoa.__init__(self, nome, cpf)
+        IdentificavelMixin.__init__(self)
+        self.auditavelmixin=AuditavelMixin()
+        self._cargo=cargo
+        self._registro=registro
+
+    def exibir_dados(self):
+        print(f"{self._nome} [{self._cargo}] ({self._registro}) <{self._id}>")
+    
+    def logar_entrada(self):
+        return f"O funcionario {self._nome} logou no  {date.today()}"
+    
+# Completo: Implementar a classe Funcionario
 
 # -------------------------------------------------
 # 7) Palco (objeto de composição)                 🡇
@@ -89,97 +102,213 @@ class Cliente(Pessoa):
 class Palco:
     """Objeto que compõe o Festival."""
     def __init__(self, nome: str, capacidade: int):
-        # TODO: armazenar nome e capacidade
-        pass
+            self.nome=nome 
+            self.capacidade=capacidade  # Completo: armazenar nome e capacidade?
+
+    def __str__(self):
+        return f"Palco {self.nome} - Capacidade de {self.capacidade} pessoas"
+
     def resumo(self):
-        # TODO: retornar string "Palco X – cap. Y pessoas"
-        pass
+        return f"Palco {self.nome} - cap. {self.capacidade} pessoas"    # Completo: retornar string "Palco X – cap. Y pessoas"
+       
 
 # -------------------------------------------------
 # 8) Festival (composição com Palco)              🡇
 # -------------------------------------------------
-# TODO: Implementar a classe Festival
-# - Atributos: nome, data, local, palco
-# - Listas: clientes, equipe, ingressos
-# - Métodos:
-#   • vender_ingresso(cliente, ingresso)  (checar duplicidade & capacidade)
-#   • adicionar_funcionario(func)
-#   • listar_clientes()
-#   • listar_equipe()
-#   • listar_ingressos()
+class Festival:
+    def __init__(self,nome:str, data:date, local:str, palco:Palco):
+        self.nome=nome
+        self.data=data
+        self.local=local
+        self.palco=palco
+        self.clientes=[]
+        self.equipe=[]
+
+    def __str__(self):
+        return f"[{self.nome}] -{self.data}- ({self.local}) <{self.palco}>"
+
+    def vender_ingresso(self, cliente:Cliente ,ingresso:Ingresso):
+        if isinstance(cliente,Cliente) !=True:
+            raise ValueError("O cliente adicionado nao e um objeto Cliente")
+        if isinstance(ingresso,Ingresso) !=True:
+            raise ValueError("O ingresso adicionado nao e um objeto Ingressso")
+        if isinstance(self.palco,Palco) !=True:
+            raise ValueError("O palco adicionado nao e um objeto Palco")
+        
+        for ingressos in cliente._ingressos_compr:
+            if ingressos.codigo == ingresso.codigo:
+                raise ValueError("O cliente já possui este ingresso.")
+        
+        ingressos_vend=0
+        for clintes in self.clientes:
+            ingressos_vend += len(clintes._ingressos_compr)
+
+        if ingressos_vend + 1 > self.palco.capacidade:
+            raise ValueError("O evento não tem mais capacidade para suportar pessoas.")
+        
+        cliente.comprar_ingresso(ingresso)
+        if cliente not in self.clientes:
+            self.clientes.append(cliente)
+
+    def adicionar_funcionario(self, func:Funcionario):
+        if isinstance(func,Funcionario) !=True:
+            raise ValueError("O func adicionado nao e um objeto Funcionario")
+        
+        for funcionarios in self.equipe:
+            if funcionarios==func:
+                raise ValueError("Esse funcionário já está na equipe.")
+        
+        self.equipe.append(func)
+
+    def listar_clientes(self):
+        for clientes in self.clientes:
+            print(clientes)
+
+    def listar_equipe(self):
+        for funcionario in self.equipe:
+            funcionario.exibir_dados()
+
+    def listar_ingressos(self):
+        for clientes in self.clientes:
+            for ingressos in clientes._ingressos_compr:
+                print(ingressos)      
+      
+# Completo: Implementar a classe Festival
 
 # -------------------------------------------------
 # 9) EmpresaEventos                               🡇
 # -------------------------------------------------
 class EmpresaEventos:
     """Agrupa seus festivais (has‑a)."""
-    def __init__(self, nome: str):
-        self._nome = nome
-        if len(nome) < 3:
-            print("Invalido")
-        else:
-            print("Valido")
-        self._festivais = []
-        # TODO: validar nome (≥ 3 letras) e criar lista vazia de festivais
-        
+    def __init__(self, nome:str):
+        self._nome=nome
+        self._festivais=[]
     @property
     def nome(self):
-        # TODO: retornar nome
         return self._nome
-    
     @nome.setter
     def nome(self, novo_nome: str):
-        self.novo_nome = novo_nome
-        # TODO: validar + atualizar nome
-        pass
-    
-    def adicionar_festival(self, festival):
-        self._festivais.append(festival)
-        # TODO: adicionar festival à lista
-        pass
-    
-    def buscar_festival(self, nome: str):
-        for festival in self._festivais:
-         if festival.nome == nome:
-            return festival
-        return None
+        if not self._nome.strip():
+            raise ValueError("O nome da empresa não pode estar vazio.")
+        self._nome=novo_nome
+        # Completo: validar + atualizar nome
         
-        # TODO: retornar festival ou None
-    
-    def listar_festivais(self):
-        if not self._festivais:
-            print("Não ha festivais")
+    def adicionar_festival(self, festival:Festival):
+        if isinstance(festival,Festival) !=True:
+            raise ValueError("O festival adicionado nao e um objeto Festival")
+
+        self._festivais.append(festival)
+        # Completo: adicionar festival à lista
+       
+    def buscar_festival(self, nome: str):
+        for festivais in self._festivais:
+            if festivais.nome == nome:
+                return festivais
         return
-        print("Festivais cadastrados")
-        for festival in self._festivais:
-            print(f"{festival}")
-            
-        # TODO: imprimir todos os festivais
-        pass
+        # Completo: retornar festival ou None
+        
+    def listar_festivais(self):
+        for festivais in self._festivais:
+            print(festivais)
+        # Completo: imprimir todos os festivais
+        
 
 # -------------------------------------------------
 # 10) Auditor (Identificável + Logável)           🡇
 # -------------------------------------------------
-# TODO: Implementar a classe Auditor
-# - Herda de IdentificavelMixin e Logavel
-# - Atributo: nome
-# - Métodos:
-#   • logar_entrada() → registra entrada no sistema
-#   • auditar_festival(fest) → verifica:
-#         ▸ Nº de clientes ≤ capacidade do palco
-#         ▸ existe ao menos 1 funcionário
-#     imprime relatório de conformidade
-#   • __str__() → "Auditor <nome> (ID: ...)"
+class Auditor(IdentificavelMixin,Logavel):
+    def __init__(self,nome:str):
+        super().__init__()
+        self.nome=nome
+    
+    def logar_entrada(self):
+        print(f"O auditor {self.nome} entrou no horario {date.today()}")
+
+    def auditar_festival(self,fest:Festival):
+        if isinstance(fest,Festival) !=True:
+            raise ValueError("O fest adicionado nao e um objeto Festival")
+
+        a=len(fest.clientes)
+        b=len(fest.equipe)
+        c=0
+        for clientes in fest.clientes:
+            c+=len(clientes._ingressos_compr)
+        print(f"= Relatório de Auditoria do Festival {fest.nome} =\n")
+        print(f"Número de clientes:{a}\nIngressos vendidos:{c}\nCapacidade do palco:{fest.palco.capacidade}\nStatus da capacidade:","A capacidade máxima de pessoas está sendo respeitada\n" if c<=fest.palco.capacidade else "A capacidade máxima de pessoas não está sendo respeitada\n")
+        print(f"Número de funcionários:{b}\nStatus dos funcionários:", "Está em conformidade\n" if b>0 else "Não está em conformidade\n")
+    
+    def __str__(self):
+        return f"Auditor <{self.nome}> (ID:{self._id})"
+
+# Completo: Implementar a classe Auditor
 
 # -------------------------------------------------
 # 11) Bloco de teste                              🡇
 # -------------------------------------------------
-if __name__ == "__main__":
+#if __name__ == "__main__":
     """
     TODO:
       • Crie 1 empresa, 2 festivais, clientes, equipe e auditor.
       • Venda ingressos, liste participantes, audite festivais.
       • Mostre saídas no console para validar implementações.
     """
-    pass
+palc=Palco("Primeiro",5)
+palc1=Palco("Segundo",5)
 
+ing=Ingresso("1","normal",2.5)
+ing1=Ingresso("2","normal",2.5)
+ing2=Ingresso("3","normal",2.5)
+ing3=Ingresso("4","normal",2.5)
+ing4=Ingresso("5","normal",2.5)
+ing5=Ingresso("6","normal",2.5)
+ing6=Ingresso("7","normal",2.5)
+ing7=Ingresso("8","normal",2.5)
+ing8=Ingresso("9","normal",2.5)
+ing9=Ingresso("10","normal",2.5)
+
+festi=Festival("Musical",date.today(),"Pau dos Ferros",palc)
+festi1=Festival("Musical 2",date.today(),"Àgua Nova",palc1)
+
+f1=Funcionario('Fulano', "1112083974", "Faxineiro","registrado")
+f2=Funcionario("Cicrano","222000888","Autor","registrado")
+
+cli=Cliente("Murilo","111222333","aaaa@mail.com")
+cli1=Cliente("Pedro","222111334","bbbb@mail.com")
+
+aud=Auditor("Pedro")
+
+emp=EmpresaEventos("XFest")
+
+festi.adicionar_funcionario(f1)
+festi.adicionar_funcionario(f2)
+festi.vender_ingresso(cli,ing)
+festi.vender_ingresso(cli,ing1)
+festi.vender_ingresso(cli,ing2)
+festi.vender_ingresso(cli,ing5)
+festi.vender_ingresso(cli,ing6)
+
+
+festi1.adicionar_funcionario(f1)
+festi1.vender_ingresso(cli1,ing3)
+festi1.vender_ingresso(cli1,ing4)
+festi1.vender_ingresso(cli1,ing7)
+festi1.vender_ingresso(cli1,ing8)
+festi1.vender_ingresso(cli1,ing9)
+
+emp.adicionar_festival(festi)
+emp.adicionar_festival(festi1)
+
+print("\n== Primeiro Festival ==")
+festi.listar_clientes()
+
+print("\n== Segundo Festival ==")
+festi1.listar_clientes()
+
+print("\n== Primeiro Festival ==")
+aud.auditar_festival(festi)
+
+print("\n== Segundo Festival ==")
+aud.auditar_festival(festi1)
+
+print("\n== Lista de Festivais ==")
+emp.listar_festivais()
