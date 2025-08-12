@@ -80,11 +80,10 @@ class Cliente(Pessoa):
 # -------------------------------------------------
 # 6) Funcionario (herança múltipla + mixins)      🡇
 # -------------------------------------------------
-class Funcionario(Pessoa,IdentificavelMixin,Logavel):
+class Funcionario(Pessoa,IdentificavelMixin,Logavel,AuditavelMixin):
     def __init__(self, nome:str, cpf:str, cargo:str, registro:str):
         Pessoa.__init__(self, nome, cpf)
         IdentificavelMixin.__init__(self)
-        self.auditavelmixin=AuditavelMixin()
         self._cargo=cargo
         self._registro=registro
 
